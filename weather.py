@@ -37,7 +37,8 @@ async def make_nws_request(url: str) -> dict[str, Any] | None:
             response = await client.get(url, headers=headers, timeout=TIME_OUT)
             response.raise_for_status()
             return response.json()
-        except Exception:
+        except Exception as e:
+            print(f"Error fetching data from {url}: {e}")
             return None
 
 def format_alert(feature: dict) -> str:

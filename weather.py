@@ -13,7 +13,7 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
-mcp = FastMCP("weather")
+mcp = FastMCP("myweather")
 
 # Constants
 NWS_API_BASE = "https://weather.tsukumijima.net/api/forecast/city/"
@@ -41,6 +41,23 @@ async def make_nws_request(url: str) -> dict[str, Any] | None:
             print(f"Error fetching data from {url}: {e}")
             return None
 
+def extract_alerts(feature: dict) -> dict:
+    """
+    天気予報APIからアラート情報を抽出する関数。
+    Returns:
+        dict: アラート情報の辞書
+    """
+    alerts = {}
+    # TODO: 返す情報を追加する。
+    detail = feature["detail"]
+    alerts["weather"] = detail.get("weather", "Unknown")
+    alerts["wind"] = detail.get("wind", "Unknown")
+    alerts["wave"] = detail.get("wave", "Unknown")
+
+    alerts["date"] = feature.get("date", "Unknown")
+
+    return alerts
+
 def format_alert(feature: dict) -> str:
     """
     天気予報のアラートをフォーマットする関数。
@@ -49,23 +66,24 @@ def format_alert(feature: dict) -> str:
     Returns:
         str: フォーマットされたアラート情報
     """
-    props = feature["properties"]
+    alerts = extract_alerts(feature)
+
     return f"""
-Event: {props.get('event', 'Unknown')}
-Area: {props.get('areaDesc', 'Unknown')}
-Severity: {props.get('severity', 'Unknown')}
-Description: {props.get('description', 'No description available')}
-Instructions: {props.get('instruction', 'No specific instructions provided')}
+weather: {alerts.get('weather')}
+wind: {alerts.get('wind')}
+wave: {alerts.get('wave')}
+date: {alerts.get("date")}
 """
 
 @mcp.tool()
 async def get_alerts(state: str) -> str:
-    """Get weather alerts for a US state.
+    """Get weather alerts for a specific state.
+    例: `get_alerts("140010")` で横浜市の天気予報を取得
 
     Args:
-        state: Two-letter US state code (e.g. CA, NY)
+        state: 地域別に定義された ID 番号
     """
-    url = f"{NWS_API_BASE}/alerts/active/area/{state}"
+    url = f"{NWS_API_BASE}{state}"
     data = await make_nws_request(url)
 
     if not data or "features" not in data:
@@ -74,46 +92,9 @@ async def get_alerts(state: str) -> str:
     if not data["features"]:
         return "No active alerts for this state."
 
-    alerts = [format_alert(feature) for feature in data["features"]]
+    alerts = [format_alert(feature) for feature in data["forecasts"]]
     return "\n---\n".join(alerts)
-
-@mcp.tool()
-async def get_forecast(latitude: float, longitude: float) -> str:
-    """Get weather forecast for a location.
-
-    Args:
-        latitude: Latitude of the location
-        longitude: Longitude of the location
-    """
-    # First get the forecast grid endpoint
-    points_url = f"{NWS_API_BASE}/points/{latitude},{longitude}"
-    points_data = await make_nws_request(points_url)
-
-    if not points_data:
-        return "Unable to fetch forecast data for this location."
-
-    # Get the forecast URL from the points response
-    forecast_url = points_data["properties"]["forecast"]
-    forecast_data = await make_nws_request(forecast_url)
-
-    if not forecast_data:
-        return "Unable to fetch detailed forecast."
-
-    # Format the periods into a readable forecast
-    periods = forecast_data["properties"]["periods"]
-    forecasts = []
-    for period in periods[:5]:  # Only show next 5 periods
-        forecast = f"""
-{period['name']}:
-Temperature: {period['temperature']}°{period['temperatureUnit']}
-Wind: {period['windSpeed']} {period['windDirection']}
-Forecast: {period['detailedForecast']}
-"""
-        forecasts.append(forecast)
-
-    return "\n---\n".join(forecasts)
 
 if __name__ == "__main__":
     # Initialize and run the server
     mcp.run(transport='stdio')
-

@@ -86,13 +86,13 @@ async def get_alerts(state: str) -> str:
     url = f"{NWS_API_BASE}{state}"
     data = await make_nws_request(url)
 
-    if not data or "features" not in data:
-        return "Unable to fetch alerts or no alerts found."
+    if not data or "forecasts" not in data:
+        return "予報を得るのに失敗しました。"
 
-    if not data["features"]:
-        return "No active alerts for this state."
+    if not data["forecasts"]:
+        return "予報が空です。"
 
-    alerts = [format_alert(feature) for feature in data["forecasts"]]
+    alerts = [format_alert(forecast) for forecast in data["forecasts"]]
     return "\n---\n".join(alerts)
 
 if __name__ == "__main__":

@@ -1,12 +1,17 @@
 """Unit tests for weather.py module."""
 
-import httputils
 import pytest
+from httputils import requiest_kishou_json, request_ichijisaibunkuiki_xml
+
+@pytest.mark.asyncio
+async def test_make_nws_request():
+  yokohama = "140010"
+  result = await requiest_kishou_json(state=yokohama)
+  assert result is not None
 
 @pytest.mark.asyncio
 async def test_request_kishou_xml():
-  xml_url = "https://weather.tsukumijima.net/primary_area.xml"
-  result = await httputils.request_kishou_xml(xml_url)
+  result = await request_ichijisaibunkuiki_xml()
 
   assert isinstance(result, dict), "The result should be a dictionary."
   assert "pref" in result, "The result should contain 'pref' key."

@@ -9,45 +9,19 @@ https://weather.tsukumijima.net/
 """
 
 from typing import Any
-import httpx
 from mcp.server.fastmcp import FastMCP
+from httputils import requiest_kishou_json, request_ichijisaibunkuiki_xml
 
 # Initialize FastMCP server
 mcp = FastMCP("myweather")
 
-# Constants
-NWS_API_BASE = "https://weather.tsukumijima.net/api/forecast/city/"
-USER_AGENT = "my-weather-app/0.0.1"
-TIME_OUT = 10.0
-
-async def make_nws_request(url: str) -> dict[str, Any] | None:
-    """
-    天気予報APIにリクエストを送信し、レスポンスを取得する非同期関数。
-    Args:
-        url (str): リクエストURL
-    Returns:
-        dict[str, Any] | None: レスポンスデータ（成功時）またはNone（失敗時）
-    """
-    headers = {
-        "User-Agent": USER_AGENT,
-        "Accept": "application/json"
-    }
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(url, headers=headers, timeout=TIME_OUT)
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            print(f"Error fetching data from {url}: {e}")
-            return None
-
-def extract_alerts(feature: dict) -> dict:
+def extract_alerts(feature: dict[str, Any]) -> dict[str, str]:
     """
     天気予報APIからアラート情報を抽出する関数。
     Returns:
         dict: アラート情報の辞書
     """
-    alerts = {}
+    alerts: dict[str, str] = {}
     # TODO: 返す情報を追加する。
     detail = feature["detail"]
     alerts["weather"] = detail.get("weather", "Unknown")
@@ -58,11 +32,11 @@ def extract_alerts(feature: dict) -> dict:
 
     return alerts
 
-def format_alert(feature: dict) -> str:
+def format_alert(feature: dict[str, Any]) -> str:
     """
     天気予報のアラートをフォーマットする関数。
     Args:
-        feature (dict): アラートのフィーチャー情報
+        feature (dict[str, Any]): アラートのフィーチャー情報
     Returns:
         str: フォーマットされたアラート情報
     """
@@ -76,13 +50,25 @@ date: {alerts.get("date")}
 """
 
 @mcp.tool()
-async def get_city_id(city_name: str) -> str:
+async def get_city_id(pref_name: str, city_name: str) -> str:
     """Get the city ID for a given city name.
     例: `get_city_id("横浜市")` で横浜市の ID を取得
     Args:
         city_name: 地域名
     """
-    pass
+    result = await request_ichijisaibunkuiki_xml()
+    if not result or "pref" not in result:
+        return "地域情報を得るのに失敗しました。"
+    if pref_name not in result["pref"]:
+        return "県名が見つかりません。"
+    if city_name not in result["pref"][pref_name]:
+        return "地域名が見つかりません。"
+    # Get the city ID
+    city_id = result["pref"][pref_name][city_name]
+    if not city_id:
+        return "地域 ID が見つかりません。"
+    
+    return str(city_id)
 
 @mcp.tool()
 async def get_alerts(state: str) -> str:
@@ -92,8 +78,7 @@ async def get_alerts(state: str) -> str:
     Args:
         state: 地域別に定義された ID 番号
     """
-    url = f"{NWS_API_BASE}{state}"
-    data = await make_nws_request(url)
+    data = await requiest_kishou_json(state=state)
 
     if not data or "forecasts" not in data:
         return "予報を得るのに失敗しました。"

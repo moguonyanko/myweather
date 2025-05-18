@@ -1,5 +1,6 @@
 {
-  "NWS_API_BASE": "https://weather.tsukumijima.net/api/forecast/city/",
+  "nws_api_base": "https://weather.tsukumijima.net/api/forecast/city/",
   "user_agent": "my-weather-app/0.0.1",
-  "time_out": 10.0
+  "time_out": 10.0,
+  "ichijisaibunkuiki_xml": "https://weather.tsukumijima.net/primary_area.xml"
 }

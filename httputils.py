@@ -9,9 +9,9 @@ config = json.load(open("config.json", "r", encoding="utf-8"))
 async def do_request(url: str, accept: str) -> bytes | None:
     """
     天気予報APIにリクエストを送信し、レスポンスを取得する非同期関数。
-    Args:
+    引数:
         url (str): リクエストURL
-    Returns:
+    戻り値:
         bytes | None: レスポンスデータ（成功時）またはNone（失敗時）
     """
     headers: dict[str, str] = {
@@ -24,15 +24,15 @@ async def do_request(url: str, accept: str) -> bytes | None:
             response.raise_for_status()
             return response.content
         except Exception as e:
-            print(f"Error fetching data from {url}: {e}")
+            print(f"データの取得中にエラーが発生しました: {url}: {e}")
             return None
 
 async def requiest_kishou_json(state: str) -> dict[str, Any] | None:
     """
-    天気予報APIにリクエストを送信し、レスポンスを取得する非同期関数。
-    Args:
-        url (str): リクエストURL
-    Returns:
+    天気予報APIにリクエストを送信し、JSONレスポンスを取得する非同期関数。
+    引数:
+        state (str): 地域名や都道府県名
+    戻り値:
         dict[str, Any] | None: レスポンスデータ（成功時）またはNone（失敗時）
     """
     nws_url = f"{config["nws_api_base"]}{state}"
@@ -41,7 +41,7 @@ async def requiest_kishou_json(state: str) -> dict[str, Any] | None:
         try:
             return json.loads(response_bytes.decode("utf-8"))
         except Exception as e:
-            print(f"Error decoding JSON response: {e}")
+            print(f"JSONレスポンスのデコードに失敗しました: {e}")
             return None
     return None
 
@@ -49,11 +49,8 @@ async def request_ichijisaibunkuiki_xml() -> dict[str, dict[str, dict[str, Optio
     """
     気象庁の防災情報XMLをパースして、一次細分区域の名称とコード（もしあれば）を抽出する関数。
 
-    Args:
-        xml_source (str): XMLファイルのパスまたはURL。
-
-    Returns:
-        list: 一次細分区域の名称とコード（またはNone）のタプルのリスト。
+    戻り値:
+        dict[str, dict[str, dict[str, Optional[str]]]]: 一次細分区域の名称とコード（またはNone）を格納した辞書。
     """
 
     output_json: dict[str, dict[str, dict[str, Optional[str]]]] = {"pref": {}}

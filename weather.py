@@ -52,7 +52,7 @@ date: {alerts.get("date")}
 @mcp.tool()
 async def get_city_id(pref_name: str, city_name: str) -> str:
     """Get the city ID for a given city name.
-    例: `get_city_id("横浜市")` で横浜市の ID を取得
+    例: `get_city_id("横浜")` で横浜市の ID を取得
     Args:
         city_name: 地域名
     """

@@ -76,6 +76,15 @@ date: {alerts.get("date")}
 """
 
 @mcp.tool()
+async def get_city_id(city_name: str) -> str:
+    """Get the city ID for a given city name.
+    例: `get_city_id("横浜市")` で横浜市の ID を取得
+    Args:
+        city_name: 地域名
+    """
+    pass
+
+@mcp.tool()
 async def get_alerts(state: str) -> str:
     """Get weather alerts for a specific state.
     例: `get_alerts("140010")` で横浜市の天気予報を取得

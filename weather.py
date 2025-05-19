@@ -15,6 +15,33 @@ from httputils import requiest_kishou_json, request_ichijisaibunkuiki_xml
 # Initialize FastMCP server
 mcp = FastMCP("myweather")
 
+class ForecastException(Exception):
+    """
+    天気予報を得る過程で発生した例外を表すクラス。
+    """
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+    def __str__(self) -> str:
+        return f"天気予報取得で例外発生: {self.message}"
+    def __repr__(self) -> str:
+        return f"ForecastException({self.message})"
+    
+class NotFoundPrefException(ForecastException):
+    """
+    都道府県が見つからない場合の例外を表すクラス。
+    """
+    def __init__(self, pref_name: str):
+        super().__init__(f"都道府県が見つかりません: {pref_name}")
+    
+class NotFoundCityException(ForecastException):
+    """
+    市町村が見つからない場合の例外を表すクラス。
+    """
+    def __init__(self, city_name: str):
+        super().__init__(f"地域名が見つかりません: {city_name}")
+
 def extract_alerts(feature: dict[str, Any]) -> dict[str, str]:
     """
     天気予報APIからアラート情報を抽出する関数。
@@ -76,15 +103,14 @@ async def get_city_id(pref_name: str, city_name: str) -> str:
     """
     result = await request_ichijisaibunkuiki_xml()
     if not result or "pref" not in result:
-        return "地域情報を得るのに失敗しました。"
+        raise ForecastException("地域情報を得るのに失敗しました。")
     if pref_name not in result["pref"]:
-        return "県名が見つかりません。"
+        raise NotFoundPrefException(pref_name=pref_name)
     if city_name not in result["pref"][pref_name]:
-        return "地域名が見つかりません。"
-    # Get the city ID
+        raise NotFoundCityException(city_name=city_name)
     city_id = result["pref"][pref_name][city_name]
     if not city_id:
-        return "地域 ID が見つかりません。"
+        raise ForecastException("地域 ID が見つかりません。")
     
     return str(city_id)
 
@@ -102,10 +128,10 @@ async def get_alerts(state: str) -> str:
     data = await requiest_kishou_json(state=state)
 
     if not data or "forecasts" not in data:
-        return "予報を得るのに失敗しました。"
+        raise ForecastException("予報を得るのに失敗しました。")
 
     if not data["forecasts"]:
-        return "予報が空です。"
+        raise ForecastException("予報が空です。")
 
     alerts = [format_alert(forecast) for forecast in data["forecasts"]]
     return "\n---\n".join(alerts)

@@ -18,6 +18,18 @@ mcp = FastMCP("myweather")
 def extract_alerts(feature: dict[str, Any]) -> dict[str, str]:
     """
     天気予報APIからアラート情報を抽出する関数。
+    Args:
+        feature (dict[str, Any]): アラートのフィーチャー情報
+    例:
+        {
+            "detail": {
+                "weather": "晴れ",
+                "wind": "南東の風",
+                "wave": "1m"
+            },
+            "date": "2023-10-01"
+        }
+ 
     Returns:
         dict: アラート情報の辞書
     """
@@ -51,10 +63,14 @@ date: {alerts.get("date")}
 
 @mcp.tool()
 async def get_city_id(pref_name: str, city_name: str) -> str:
-    """Get the city ID for a given city name.
-    例: `get_city_id("横浜")` で横浜市の ID を取得
+    """
+    指定した一次細分区域名から地域IDを取得します。
+    例: `get_city_id("福岡県")` で福岡の ID を取得
     Args:
-        city_name: 地域名
+        pref_name: 地域名（北海道を除き県名と一致する）
+        例: "福岡県"
+        city_name: 一次細分区域名（多くは市を除いた市区町村名と一致する）
+        例: "福岡"
     """
     result = await request_ichijisaibunkuiki_xml()
     if not result or "pref" not in result:
@@ -72,11 +88,14 @@ async def get_city_id(pref_name: str, city_name: str) -> str:
 
 @mcp.tool()
 async def get_alerts(state: str) -> str:
-    """Get weather alerts for a specific state.
-    例: `get_alerts("140010")` で横浜市の天気予報を取得
+    """
+    指定した地域IDの天気予報アラートを取得します。
+    例: `get_alerts("400010")` で福岡の天気予報を取得
 
     Args:
         state: 地域別に定義された ID 番号
+    Returns:
+        str: フォーマットされたアラート情報
     """
     data = await requiest_kishou_json(state=state)
 

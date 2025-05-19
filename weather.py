@@ -67,9 +67,11 @@ async def get_city_id(pref_name: str, city_name: str) -> str:
     指定した一次細分区域名から地域IDを取得します。
     例: `get_city_id("福岡県")` で福岡の ID を取得
     Args:
-        pref_name: 地域名（北海道を除き県名と一致する）
+        pref_name: 地域名
+        北海道を除き県名と一致する。北海道は「道南」「道央」「道北」「道東」のいずれかを指定する。
         例: "福岡県"
-        city_name: 一次細分区域名（多くは市を除いた市区町村名と一致する）
+        city_name: 一次細分区域名
+        島や湖を除き、「市」を除去した市区町村名と一致する。
         例: "福岡"
     """
     result = await request_ichijisaibunkuiki_xml()

@@ -45,6 +45,23 @@ async def requiest_kishou_json(state: str) -> dict[str, Any] | None:
             return None
     return None
 
+def set_city_ids(pref_element: ET.Element, 
+                 output_json: dict[str, dict[str, dict[str, Optional[str]]]], 
+                 pref_title: str):
+    """
+    都道府県要素から市町村のIDを抽出して辞書に格納する関数。
+    Args:
+        pref_element (ET.Element): 都道府県要素
+        output_json (dict): 出力用の辞書
+        pref_title (str): 都道府県名
+    """
+    # 都道府県名をキーにして辞書を初期化
+    for city_element in pref_element.findall('./city'):
+        city_title = city_element.get('title')
+        city_id = city_element.get('id')
+        if city_title is not None:
+            output_json["pref"][pref_title][city_title] = city_id
+
 async def request_ichijisaibunkuiki_xml() -> dict[str, dict[str, dict[str, Optional[str]]]]:
     """
     気象庁の防災情報XMLをパースして、一次細分区域の名称とコード（もしあれば）を抽出する関数。
@@ -63,12 +80,9 @@ async def request_ichijisaibunkuiki_xml() -> dict[str, dict[str, dict[str, Optio
             for pref_element in root.findall('.//pref'):
                 pref_title = pref_element.get('title')
                 if pref_title is not None:
-                    output_json["pref"][pref_title] = {}
-                    for city_element in pref_element.findall('./city'):
-                        city_title = city_element.get('title')
-                        city_id = city_element.get('id')
-                        if city_title is not None:
-                            output_json["pref"][pref_title][city_title] = city_id
+                    if pref_title not in output_json["pref"]:                        
+                        output_json["pref"][pref_title] = {}
+                    set_city_ids(pref_element, output_json, pref_title)
         else:
             print(f"エラー: XMLデータの取得に失敗しました: {xml_source}")
 

@@ -23,14 +23,22 @@ async def test_get_alerts():
   print(result)
   assert result is not None
 
-@pytest.mark.asyncio
-async def test_get_city_id():
-  kanagawa = "神奈川県"
-  yokohama = "横浜"
-  result = await get_city_id(kanagawa, yokohama)
-  print(result)
+def assert_city_id(result: str):
   assert result is not None
   assert isinstance(result, str), "The result should be a string."
   assert len(result) > 0, "The result should not be empty."
   assert result.isdigit(), "The result should be a digit."
   assert len(result) == 6, "The result should be a 6-digit string."
+
+@pytest.mark.asyncio
+async def test_get_city_id():
+  pref_name = "道南"
+  city_name = "室蘭"
+  result = await get_city_id(pref_name, city_name)
+  assert_city_id(result)
+
+  # 函館はprefは室蘭と同じ道南ではあるものの、別のpref要素以下に含まれている。
+  # 室蘭と同じように結果を取得できるか確認する。
+  city_name = "函館" 
+  result = await get_city_id(pref_name, city_name)
+  assert_city_id(result)
